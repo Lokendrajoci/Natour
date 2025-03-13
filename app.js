@@ -1,5 +1,5 @@
-const express = require('express');
-const fs = require('fs');
+const express = require("express");
+const fs = require("fs");
 const app = express();
 
 app.use(express.json());
@@ -17,10 +17,10 @@ const tours = JSON.parse(
   fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`)
 );
 
-app.get('/api/v1/tours', (req, res) => {
+app.get("/api/v1/tours", (req, res) => {
   res
     .status(200)
-    .json({ status: 'success', results: tours.length, data: { tours } });
+    .json({ status: "success", results: tours.length, data: { tours } });
 });
 
 // app.post('/api/v1/tours', (req, res) => {
@@ -44,27 +44,25 @@ app.get('/api/v1/tours', (req, res) => {
 //   );
 // });
 
-app.post('/api/v1/tours', (req, res) => {
+app.post("/api/v1/tours", (req, res) => {
   const newId = tours[tours.length - 1].id + 1;
   const newTour = Object.assign({ id: newId }, req.body);
 
   tours.push(newTour);
 
   try {
-    fs.writeFile(
+    fs.writeFileSync(
       `${__dirname}/dev-data/data/tours-simple.json`,
       JSON.stringify(tours)
     );
-    res.status(201).json({ status: 'success', data: { tour: newTour } });
+    res.status(201).json({ status: "success", data: { tour: newTour } });
   } catch (err) {
-    console.error('Error writing file:', err);
-    res
-      .status(500)
-      .json({
-        status: 'fail',
-        message: 'Could not write file',
-        error: err.message,
-      });
+    console.error("Error writing file:", err);
+    res.status(500).json({
+      status: "fail",
+      message: "Could not write file",
+      error: err.message,
+    });
   }
 });
 const port = 3000;
