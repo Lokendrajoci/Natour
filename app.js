@@ -51,7 +51,7 @@ app.post('/api/v1/tours', (req, res) => {
   tours.push(newTour);
 
   try {
-    fs.writeFile(
+    fs.writeFileSync(
       `${__dirname}/dev-data/data/tours-simple.json`,
       JSON.stringify(tours)
     );
