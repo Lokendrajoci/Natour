@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
@@ -12,6 +13,10 @@ const userRouter = require('./routes/userRoutes');
 const AppError = require('./Utils/appError');
 const globalErrorHandler = require('./controller/errorController');
 //  1) MIDDLEWARES
+=======
+const express = require("express");
+const fs = require("fs");
+>>>>>>> 315d03536b67c6eb9d78a499fcc8c5b85df79574
 const app = express();
 
 app.use(helmet());
@@ -58,16 +63,63 @@ app.use(
   }),
 );
 
+<<<<<<< HEAD
 //before every request, this middleware will be executed
 app.use((req, res, next) => {
   console.log('Hello from the middleware 👋');
   next();
+=======
+app.get("/api/v1/tours", (req, res) => {
+  res
+    .status(200)
+    .json({ status: "success", results: tours.length, data: { tours } });
+>>>>>>> 315d03536b67c6eb9d78a499fcc8c5b85df79574
 });
 
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
 
+<<<<<<< HEAD
   next();
+=======
+//   tours.push(newTour);
+
+//   fs.writeFile(
+//     `${__dirname}/dev-data/data/tours-simple.json`,
+//     JSON.stringify(tours),
+//     (err) => {
+//       if (err) {
+//         console.error('Error writing file:', err);
+//         return res
+//           .status(500)
+//           .json({ status: 'fail', message: 'Could not write file' });
+//       }
+//       res.status(201).json({ status: 'success', data: { tour: newTour } });
+//     }
+//   );
+// });
+
+app.post("/api/v1/tours", (req, res) => {
+  const newId = tours[tours.length - 1].id + 1;
+  const newTour = Object.assign({ id: newId }, req.body);
+
+  tours.push(newTour);
+
+  try {
+    fs.writeFileSync(
+      `${__dirname}/dev-data/data/tours-simple.json`,
+      JSON.stringify(tours)
+    );
+    res.status(201).json({ status: "success", data: { tour: newTour } });
+  } catch (err) {
+    console.error("Error writing file:", err);
+    res.status(500).json({
+      status: "fail",
+      message: "Could not write file",
+      error: err.message,
+    });
+  }
+>>>>>>> 315d03536b67c6eb9d78a499fcc8c5b85df79574
 });
 
 app.use('/api/v1/tours', tourRouter);
