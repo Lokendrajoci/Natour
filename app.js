@@ -1,74 +1,90 @@
 const express = require('express');
-const fs = require('fs');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
+
+
+const morgan = require('morgan');
+const tourRouter = require('./routes/tourRoutes');
+const userRouter = require('./routes/userRoutes');
+const AppError = require('./Utils/appError');
+const globalErrorHandler = require('./controller/errorController');
+//  1) MIDDLEWARES
 const app = express();
 
-app.use(express.json());
-// app.get('/', (req, res) => {
-//   res
-//     .status(200)
-//     .json({ message: 'Hello from the serverside!', app: 'Natours' });
-// });
+app.use(helmet());
 
-// app.post('/', (req, res) => {
-//   res.send('You can post to this endpoint...');
-// });
+// 2) GLOBAL MIDDLEWARES
 
-const tours = JSON.parse(
-  fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`)
+// Implementing a rate limiter
+const limiter = rateLimit({
+  max: 100,
+  windowMs: 60 * 60 * 1000, // 1 hour
+  message: 'Too many requests from this IP, please try again in an hour!',
+});
+
+// Apply the rate limiter to all requests
+app.use('/api', limiter);
+
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
+app.use(morgan('dev'));
+app.use(express.json({ limit: '10kb' }));
+app.use(express.static(`${__dirname}/public`));
+
+
+//data sanitization against NoSQL query injection
+
+app.use(mongoSanitize());
+
+//data sanitization against XSS
+app.use(xss());
+
+// Prevent parameter pollution
+app.use(
+  hpp({
+    whitelist: [
+      'duration',
+      'ratingsQuantity',
+      'ratingsAverage',
+      'maxGroupSize',
+      'difficulty',
+      'price',
+    ],
+  }),
 );
 
-app.get('/api/v1/tours', (req, res) => {
-  res
-    .status(200)
-    .json({ status: 'success', results: tours.length, data: { tours } });
+//before every request, this middleware will be executed
+app.use((req, res, next) => {
+  console.log('Hello from the middleware 👋');
+  next();
 });
 
-// app.post('/api/v1/tours', (req, res) => {
-//   const newId = tours[tours.length - 1].id + 1;
-//   const newTour = Object.assign({ id: newId }, req.body);
+app.use((req, res, next) => {
+  req.requestTime = new Date().toISOString();
 
-//   tours.push(newTour);
-
-//   fs.writeFile(
-//     `${__dirname}/dev-data/data/tours-simple.json`,
-//     JSON.stringify(tours),
-//     (err) => {
-//       if (err) {
-//         console.error('Error writing file:', err);
-//         return res
-//           .status(500)
-//           .json({ status: 'fail', message: 'Could not write file' });
-//       }
-//       res.status(201).json({ status: 'success', data: { tour: newTour } });
-//     }
-//   );
-// });
-
-app.post('/api/v1/tours', (req, res) => {
-  const newId = tours[tours.length - 1].id + 1;
-  const newTour = Object.assign({ id: newId }, req.body);
-
-  tours.push(newTour);
-
-  try {
-    fs.writeFileSync(
-      `${__dirname}/dev-data/data/tours-simple.json`,
-      JSON.stringify(tours)
-    );
-    res.status(201).json({ status: 'success', data: { tour: newTour } });
-  } catch (err) {
-    console.error('Error writing file:', err);
-    res
-      .status(500)
-      .json({
-        status: 'fail',
-        message: 'Could not write file',
-        error: err.message,
-      });
-  }
+  next();
 });
-const port = 3000;
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.use('/api/v1/tours', tourRouter);
+app.use('/api/v1/users', userRouter);
+
+app.all('*', (req, res, next) => {
+  // res.status(404).json({
+  //   status: 'fail',
+  //   message: `Can't find ${req.originalUrl} on this server!`,
+  // });
+  // const err = new Error(`Can't find ${req.originalUrl} on this server!`);
+  // err.statusCode = 404;
+  // err.status = 'fail';
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
+
+// Global error handling middleware
+app.use(globalErrorHandler);
+
+module.exports = app;
