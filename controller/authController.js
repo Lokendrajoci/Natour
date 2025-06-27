@@ -120,7 +120,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 exports.restrictTo =
   (...roles) =>
   (req, res, next) => {
-    console.log('User object:', req.user.role);
+    
 
     // Ensure `req.user` exists
     if (!req.user) {

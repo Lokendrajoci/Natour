@@ -20,8 +20,10 @@ mongoose.connect(DB, {
   .catch((err) => console.error('Database connection error:', err));
 
 // Read from file
+
+
 const tours = JSON.parse(
-  fs.readFileSync(`${__dirname}/tours-simple.json`, 'utf-8')
+  fs.readFileSync(`${__dirname}/tours.json`, 'utf-8')
 );
 
 // Import data into DB
