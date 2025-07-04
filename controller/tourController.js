@@ -39,11 +39,10 @@ exports.aliasTopTours = (req, res, next) => {
 exports.getAllTour = catchAsync(async (req, res, next) => {
   // 7. Execute
 
- 
   const fetures = new APIFeatures(Tour.find(), req.query);
   fetures.filter().sort().limitFields().paginate();
   const tours = await fetures.query;
- 
+
   // 8. Send response
   res.status(200).json({
     status: 'success',
@@ -55,7 +54,6 @@ exports.getAllTour = catchAsync(async (req, res, next) => {
 // const catchAsync = (fn) => (req, res, next) => fn(req, res, next).catch(next);
 
 exports.postTour = catchAsync(async (req, res, next) => {
-
   const newTour = await Tour.create(req.body); // Create a new tour
   res.status(201).json({
     status: 'success',
@@ -77,19 +75,16 @@ exports.getTour = catchAsync(async (req, res, next) => {
   // console.log(req.params);
   // const tour = tours.find((el) => el.id === parseInt(req.params.id));
 
-  await Tour.findById(req.params.id)
-    
-    .then((tour) => {
-      if (!tour) {
-        return next(new AppError('No tour found with that ID', 404));
-      }
-      res.status(200).json({
-        status: 'success',
-        data: {
-          tour,
-        },
-      });
-    });
+  const tour = await Tour.findById(req.params.id).populate('reviews');
+  if (!tour) {
+    return next(new AppError('No tour found with that ID', 404));
+  }
+  res.status(200).json({
+    status: 'success',
+    data: {
+      tour,
+    },
+  });
 });
 
 exports.patchTour = catchAsync(async (req, res, next) => {
